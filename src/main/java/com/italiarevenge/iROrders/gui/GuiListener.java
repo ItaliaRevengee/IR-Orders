@@ -7,6 +7,7 @@ import io.papermc.paper.event.player.AsyncChatEvent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -14,11 +15,11 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 
+import java.util.Collections;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -95,44 +96,77 @@ public class GuiListener implements Listener {
     // ── Catalog ───────────────────────────────────────────────────────────────
 
     private void handleCatalog(Player player, int slot, ItemStack clicked, SessionData session) {
+        // Search button
+        if (slot == 0) {
+            player.closeInventory();
+            promptSearch(player, session);
+            return;
+        }
+        // Clear search
+        if (slot == 7) {
+            session.setPickerSearch(null);
+            session.setPickerPage(0);
+            new CatalogGUI(plugin).open(player, session);
+            return;
+        }
         // Back button
         if (slot == 8) {
             player.closeInventory();
             new MainMenuGUI(plugin).open(player);
             return;
         }
-        // Prev page (slot 45)
-        if (slot == 45) {
-            session.setCatalogPage(Math.max(0, session.getCatalogPage() - 1));
+        // Prev page
+        if (slot == 45 && session.getPickerPage() > 0) {
+            session.setPickerPage(session.getPickerPage() - 1);
             new CatalogGUI(plugin).open(player, session);
             return;
         }
-        // Next page (slot 53)
+        // Next page
         if (slot == 53) {
-            session.setCatalogPage(session.getCatalogPage() + 1);
+            session.setPickerPage(session.getPickerPage() + 1);
             new CatalogGUI(plugin).open(player, session);
-            return;
-        }
-        // Category tab (slots 0-6)
-        if (slot < 7) {
-            java.util.List<String> cats = plugin.getCatalogManager().getCategoryOrder();
-            if (slot < cats.size()) {
-                session.setCatalogCategory(cats.get(slot));
-                session.setCatalogPage(0);
-                new CatalogGUI(plugin).open(player, session);
-            }
             return;
         }
         // Item click (slots 9-44)
         if (slot >= 9 && slot <= 44) {
             String pdc = PDCUtil.getItemId(clicked, plugin.getItemIdKey());
             if (pdc == null) return;
-            Optional<CatalogItem> ci = plugin.getCatalogManager().getById(pdc);
-            if (ci.isEmpty()) return;
-            session.setSelectedItem(ci.get());
+
+            CatalogItem ci;
+            if (pdc.startsWith("mat:")) {
+                String matName = pdc.substring(4);
+                Material mat;
+                try { mat = Material.valueOf(matName); }
+                catch (IllegalArgumentException ignored) { return; }
+                ci = new CatalogItem(pdc, mat, CatalogGUI.formatName(mat), "vanilla",
+                        Collections.emptyMap());
+            } else {
+                Optional<CatalogItem> opt = plugin.getCatalogManager().getById(pdc);
+                if (opt.isEmpty()) return;
+                ci = opt.get();
+            }
+
+            session.setSelectedItem(ci);
             player.closeInventory();
             new QuantityGUI(plugin).open(player, session);
         }
+    }
+
+    private void promptSearch(Player player, SessionData session) {
+        player.sendMessage(Component.text("─────────────────────────────", NamedTextColor.DARK_GRAY));
+        player.sendMessage(Component.text("Type item name to search ", NamedTextColor.YELLOW)
+                .append(Component.text("(empty or 'cancel' to go back):", NamedTextColor.GRAY)));
+
+        plugin.awaitChatInput(player.getUniqueId(), input -> {
+            String trimmed = input.trim();
+            if (trimmed.isEmpty() || "cancel".equalsIgnoreCase(trimmed)) {
+                new CatalogGUI(plugin).open(player, session);
+                return;
+            }
+            session.setPickerSearch(trimmed);
+            session.setPickerPage(0);
+            new CatalogGUI(plugin).open(player, session);
+        });
     }
 
     // ── Quantity ──────────────────────────────────────────────────────────────
@@ -274,13 +308,8 @@ public class GuiListener implements Listener {
 
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent e) {
-        // Cancel pending chat input if the player closes a GUI
-        if (!(e.getPlayer() instanceof Player player)) return;
-        InventoryHolder holder = e.getInventory().getHolder();
-        if (!(holder instanceof GuiHolder)) return;
-        // Don't clear session — preserve page state for when they reopen
-        // Only clear pending chat input if the player closes during price entry
-        // The chat event handler itself handles the 'cancel' case
+        if (!(e.getPlayer() instanceof Player)) return;
+        if (!(e.getInventory().getHolder() instanceof GuiHolder)) return;
     }
 
     // ── Chat input intercept ──────────────────────────────────────────────────

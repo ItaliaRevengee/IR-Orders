@@ -36,8 +36,8 @@ public class MainMenuGUI {
 
         // ── Create Order button ───────────────────────────────────────────────
         inv.setItem(10, ItemUtil.build(Material.EMERALD_BLOCK,
-                Component.text("§a§l📦 Create Buy Order")
-                        .decoration(TextDecoration.ITALIC, false),
+                Component.text("📦 Create Buy Order", NamedTextColor.GREEN)
+                        .decoration(TextDecoration.BOLD, true).decoration(TextDecoration.ITALIC, false),
                 List.of(
                         ItemUtil.gray("Browse the catalog and place a"),
                         ItemUtil.gray("buy order for any item."),
@@ -49,8 +49,8 @@ public class MainMenuGUI {
 
         // ── My Orders button ──────────────────────────────────────────────────
         inv.setItem(13, ItemUtil.build(Material.WRITTEN_BOOK,
-                Component.text("§e§l📋 My Orders")
-                        .decoration(TextDecoration.ITALIC, false),
+                Component.text("📋 My Orders", NamedTextColor.YELLOW)
+                        .decoration(TextDecoration.BOLD, true).decoration(TextDecoration.ITALIC, false),
                 List.of(
                         ItemUtil.gray("View and manage your active"),
                         ItemUtil.gray("buy orders."),
@@ -62,8 +62,8 @@ public class MainMenuGUI {
 
         // ── Global Market button ──────────────────────────────────────────────
         inv.setItem(16, ItemUtil.build(Material.GOLD_BLOCK,
-                Component.text("§6§l🌍 Global Market")
-                        .decoration(TextDecoration.ITALIC, false),
+                Component.text("🌍 Global Market", NamedTextColor.GOLD)
+                        .decoration(TextDecoration.BOLD, true).decoration(TextDecoration.ITALIC, false),
                 List.of(
                         ItemUtil.gray("Browse all active buy orders"),
                         ItemUtil.gray("and sell your items."),

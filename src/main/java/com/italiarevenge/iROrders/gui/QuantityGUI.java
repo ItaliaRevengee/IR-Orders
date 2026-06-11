@@ -53,7 +53,7 @@ public class QuantityGUI {
         for (int i = 0; i < QUANTITIES.length; i++) {
             int qty = QUANTITIES[i];
             inv.setItem(QTY_SLOTS[i], ItemUtil.build(QTY_MAT[i],
-                    Component.text("§l" + qty + "x").decoration(TextDecoration.ITALIC, false),
+                    Component.text(qty + "x").decoration(TextDecoration.BOLD, true).decoration(TextDecoration.ITALIC, false),
                     List.of(
                             ItemUtil.gray("Order " + qty + "x"),
                             ItemUtil.legacy(ci.getDisplayName())
@@ -66,7 +66,7 @@ public class QuantityGUI {
 
         // Back button
         inv.setItem(18, ItemUtil.build(Material.BARRIER,
-                Component.text("§c← Back to Catalog").decoration(TextDecoration.ITALIC, false),
+                Component.text("<- Back to Catalog", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false),
                 List.of(ItemUtil.gray("Return to item catalog"))));
 
         player.openInventory(inv);

@@ -79,21 +79,21 @@ public class MarketGUI {
         // Navigation
         if (page > 0) {
             inv.setItem(45, ItemUtil.build(Material.ARROW,
-                    Component.text("§e← Previous Page").decoration(TextDecoration.ITALIC, false),
+                    Component.text("<- Previous Page", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false),
                     List.of()));
         }
         inv.setItem(49, ItemUtil.build(Material.PAPER,
-                Component.text("§fPage " + (page + 1) + " / " + totalPages)
+                Component.text("Page " + (page + 1) + " / " + totalPages, NamedTextColor.WHITE)
                         .decoration(TextDecoration.ITALIC, false),
                 List.of(ItemUtil.gray(sorted.size() + " total orders"))));
         if (page < totalPages - 1) {
             inv.setItem(53, ItemUtil.build(Material.ARROW,
-                    Component.text("§eNext Page →").decoration(TextDecoration.ITALIC, false),
+                    Component.text("Next Page ->", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false),
                     List.of()));
         }
 
         inv.setItem(47, ItemUtil.build(Material.BARRIER,
-                Component.text("§c← Back to Menu").decoration(TextDecoration.ITALIC, false),
+                Component.text("<- Back to Menu", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false),
                 List.of(ItemUtil.gray("Return to main menu"))));
 
         player.openInventory(inv);

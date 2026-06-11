@@ -10,8 +10,8 @@ public class SessionData {
 
     private CatalogItem selectedItem;
     private int selectedQuantity = -1;
-    private int catalogPage = 0;
-    private String catalogCategory;
+    private String pickerSearch = null;
+    private int pickerPage = 0;
     private int marketPage = 0;
     private int myOrdersPage = 0;
 
@@ -21,11 +21,11 @@ public class SessionData {
     public int getSelectedQuantity() { return selectedQuantity; }
     public void setSelectedQuantity(int q) { this.selectedQuantity = q; }
 
-    public int getCatalogPage() { return catalogPage; }
-    public void setCatalogPage(int p) { this.catalogPage = p; }
+    public String getPickerSearch() { return pickerSearch; }
+    public void setPickerSearch(String s) { this.pickerSearch = s; }
 
-    public String getCatalogCategory() { return catalogCategory; }
-    public void setCatalogCategory(String c) { this.catalogCategory = c; }
+    public int getPickerPage() { return pickerPage; }
+    public void setPickerPage(int p) { this.pickerPage = p; }
 
     public int getMarketPage() { return marketPage; }
     public void setMarketPage(int p) { this.marketPage = p; }
@@ -36,5 +36,7 @@ public class SessionData {
     public void reset() {
         selectedItem = null;
         selectedQuantity = -1;
+        pickerSearch = null;
+        pickerPage = 0;
     }
 }

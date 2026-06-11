@@ -14,9 +14,10 @@ import com.italiarevenge.iROrders.validation.EnchantValidator;
 import com.italiarevenge.iROrders.validation.ItemValidator;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -205,10 +206,13 @@ public class OrderManager {
             int count = inventoryService.countItems(
                     seller.getInventory(), order, order.getQuantity());
             if (count < order.getQuantity()) {
+                String itemId = order.getItemId();
+                String itemDesc = itemId.startsWith("mat:")
+                        ? order.getMaterial().name()
+                        : "(id: " + itemId + ")";
                 seller.sendMessage(Component.text(
-                        "You need " + order.getQuantity() + "x of the required item "
-                        + "(PDC id: " + order.getItemId() + "). You have "
-                        + count + ".", NamedTextColor.RED));
+                        "You need " + order.getQuantity() + "x " + itemDesc
+                        + ". You have " + count + ".", NamedTextColor.RED));
                 return;
             }
 
@@ -320,7 +324,8 @@ public class OrderManager {
             for (Map.Entry<String, Integer> e : order.getRequiredEnchants().entrySet()) {
                 NamespacedKey key = NamespacedKey.fromString(e.getKey());
                 if (key == null) continue;
-                Enchantment enc = Registry.ENCHANTMENT.get(key);
+                Enchantment enc = RegistryAccess.registryAccess()
+                        .getRegistry(RegistryKey.ENCHANTMENT).get(key);
                 if (enc != null) item.addUnsafeEnchantment(enc, e.getValue());
             }
         }

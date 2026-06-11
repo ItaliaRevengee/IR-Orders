@@ -2,10 +2,10 @@ package com.italiarevenge.iROrders.validation;
 
 import com.italiarevenge.iROrders.model.Order;
 import com.italiarevenge.iROrders.util.PDCUtil;
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.Map;
 
 /**
  * Validates items against orders using PDC item_id + optional strict enchants.
@@ -31,14 +31,21 @@ public class ItemValidator {
 
     /**
      * Full order validation:
-     * 1. PDC item_id must match.
-     * 2. If strictEnchants, enchants must match exactly.
+     * - "mat:MATERIAL" orders match any item of that material (no PDC required).
+     * - All other orders require a matching PDC item_id, plus strict enchants if set.
      */
     public boolean isValidForOrder(ItemStack item, Order order) {
-        if (!hasCorrectId(item, order.getItemId())) return false;
+        String itemId = order.getItemId();
+        if (itemId.startsWith("mat:")) {
+            try {
+                return item.getType() == Material.valueOf(itemId.substring(4));
+            } catch (IllegalArgumentException e) {
+                return false;
+            }
+        }
+        if (!hasCorrectId(item, itemId)) return false;
         if (order.isStrictEnchants()) {
-            Map<String, Integer> required = order.getRequiredEnchants();
-            return enchantValidator.enchantsMatch(item, required);
+            return enchantValidator.enchantsMatch(item, order.getRequiredEnchants());
         }
         return true;
     }
