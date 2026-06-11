@@ -1,0 +1,14 @@
+name: IR-Orders
+version: '${version}'
+main: com.italiarevenge.iROrders.IROrders
+api-version: '1.21'
+load: POSTWORLD
+description: Advanced buy-order marketplace for Minecraft servers
+authors:
+  - IR-Team
+
+dependencies:
+  server:
+    - name: Vault
+      required: false
+      load: BEFORE

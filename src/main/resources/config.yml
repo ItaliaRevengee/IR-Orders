@@ -1,0 +1,262 @@
+# IR-Orders Configuration
+
+database:
+  file: ir-orders.db
+
+economy:
+  min-price: 1.0
+  max-price: 10000000.0
+
+market:
+  max-orders-per-player: 20
+
+# ─────────────────────────────────────────────────────
+#  Item Catalog
+#  id       → PDC value stored in the item (item_id key)
+#  material → Bukkit Material name
+#  category → groups items in the catalog GUI
+#  enchants → (optional) if present, STRICT mode is on:
+#             sellers must supply items with EXACTLY these enchants
+# ─────────────────────────────────────────────────────
+catalog:
+  categories:
+    blocks:
+      display-name: "§aBlocks"
+      icon: GRASS_BLOCK
+    ores:
+      display-name: "§6Ores & Minerals"
+      icon: DIAMOND_ORE
+    weapons:
+      display-name: "§cWeapons"
+      icon: DIAMOND_SWORD
+    tools:
+      display-name: "§eTools"
+      icon: DIAMOND_PICKAXE
+    armor:
+      display-name: "§bArmor"
+      icon: DIAMOND_CHESTPLATE
+    misc:
+      display-name: "§7Miscellaneous"
+      icon: ENDER_CHEST
+
+  items:
+    # Blocks
+    - id: cobblestone
+      material: COBBLESTONE
+      display-name: "§fCobblestone"
+      category: blocks
+
+    - id: stone
+      material: STONE
+      display-name: "§fStone"
+      category: blocks
+
+    - id: oak_log
+      material: OAK_LOG
+      display-name: "§fOak Log"
+      category: blocks
+
+    - id: oak_planks
+      material: OAK_PLANKS
+      display-name: "§fOak Planks"
+      category: blocks
+
+    - id: sand
+      material: SAND
+      display-name: "§fSand"
+      category: blocks
+
+    - id: gravel
+      material: GRAVEL
+      display-name: "§7Gravel"
+      category: blocks
+
+    - id: glass
+      material: GLASS
+      display-name: "§fGlass"
+      category: blocks
+
+    - id: obsidian
+      material: OBSIDIAN
+      display-name: "§5Obsidian"
+      category: blocks
+
+    # Ores & Minerals
+    - id: coal
+      material: COAL
+      display-name: "§8Coal"
+      category: ores
+
+    - id: iron_ingot
+      material: IRON_INGOT
+      display-name: "§7Iron Ingot"
+      category: ores
+
+    - id: gold_ingot
+      material: GOLD_INGOT
+      display-name: "§6Gold Ingot"
+      category: ores
+
+    - id: diamond
+      material: DIAMOND
+      display-name: "§bDiamond"
+      category: ores
+
+    - id: emerald
+      material: EMERALD
+      display-name: "§aEmerald"
+      category: ores
+
+    - id: netherite_ingot
+      material: NETHERITE_INGOT
+      display-name: "§8Netherite Ingot"
+      category: ores
+
+    - id: lapis_lazuli
+      material: LAPIS_LAZULI
+      display-name: "§9Lapis Lazuli"
+      category: ores
+
+    - id: redstone
+      material: REDSTONE
+      display-name: "§cRedstone"
+      category: ores
+
+    # Weapons
+    - id: diamond_sword
+      material: DIAMOND_SWORD
+      display-name: "§bDiamond Sword"
+      category: weapons
+
+    - id: diamond_sword_sharpness5
+      material: DIAMOND_SWORD
+      display-name: "§bDiamond Sword §7(Sharpness V)"
+      category: weapons
+      enchants:
+        minecraft:sharpness: 5
+
+    - id: diamond_sword_sharpness5_looting3
+      material: DIAMOND_SWORD
+      display-name: "§bDiamond Sword §7(Sharp V + Looting III)"
+      category: weapons
+      enchants:
+        minecraft:sharpness: 5
+        minecraft:looting: 3
+
+    - id: netherite_sword
+      material: NETHERITE_SWORD
+      display-name: "§8Netherite Sword"
+      category: weapons
+
+    - id: bow
+      material: BOW
+      display-name: "§fBow"
+      category: weapons
+
+    - id: crossbow
+      material: CROSSBOW
+      display-name: "§fCrossobow"
+      category: weapons
+
+    # Tools
+    - id: diamond_pickaxe
+      material: DIAMOND_PICKAXE
+      display-name: "§bDiamond Pickaxe"
+      category: tools
+
+    - id: diamond_pickaxe_eff5
+      material: DIAMOND_PICKAXE
+      display-name: "§bDiamond Pickaxe §7(Efficiency V)"
+      category: tools
+      enchants:
+        minecraft:efficiency: 5
+
+    - id: diamond_pickaxe_eff5_fort3
+      material: DIAMOND_PICKAXE
+      display-name: "§bDiamond Pickaxe §7(Eff V + Fort III)"
+      category: tools
+      enchants:
+        minecraft:efficiency: 5
+        minecraft:fortune: 3
+
+    - id: netherite_pickaxe
+      material: NETHERITE_PICKAXE
+      display-name: "§8Netherite Pickaxe"
+      category: tools
+
+    - id: diamond_axe
+      material: DIAMOND_AXE
+      display-name: "§bDiamond Axe"
+      category: tools
+
+    - id: diamond_shovel
+      material: DIAMOND_SHOVEL
+      display-name: "§bDiamond Shovel"
+      category: tools
+
+    - id: fishing_rod
+      material: FISHING_ROD
+      display-name: "§fFishing Rod"
+      category: tools
+
+    # Armor
+    - id: diamond_helmet
+      material: DIAMOND_HELMET
+      display-name: "§bDiamond Helmet"
+      category: armor
+
+    - id: diamond_chestplate
+      material: DIAMOND_CHESTPLATE
+      display-name: "§bDiamond Chestplate"
+      category: armor
+
+    - id: diamond_leggings
+      material: DIAMOND_LEGGINGS
+      display-name: "§bDiamond Leggings"
+      category: armor
+
+    - id: diamond_boots
+      material: DIAMOND_BOOTS
+      display-name: "§bDiamond Boots"
+      category: armor
+
+    - id: elytra
+      material: ELYTRA
+      display-name: "§dElytra"
+      category: armor
+
+    - id: netherite_chestplate
+      material: NETHERITE_CHESTPLATE
+      display-name: "§8Netherite Chestplate"
+      category: armor
+
+    # Misc
+    - id: ender_pearl
+      material: ENDER_PEARL
+      display-name: "§5Ender Pearl"
+      category: misc
+
+    - id: blaze_rod
+      material: BLAZE_ROD
+      display-name: "§6Blaze Rod"
+      category: misc
+
+    - id: nether_star
+      material: NETHER_STAR
+      display-name: "§fNether Star"
+      category: misc
+
+    - id: totem_of_undying
+      material: TOTEM_OF_UNDYING
+      display-name: "§6Totem of Undying"
+      category: misc
+
+    - id: shulker_box
+      material: SHULKER_BOX
+      display-name: "§dShulker Box"
+      category: misc
+
+    - id: enchanted_golden_apple
+      material: ENCHANTED_GOLDEN_APPLE
+      display-name: "§6Enchanted Golden Apple"
+      category: misc
