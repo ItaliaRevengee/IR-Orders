@@ -25,20 +25,30 @@ public enum MaterialCategory {
 
     // ── Helper sets — MUST be declared before the static block that calls classify() ──
 
-    private static final Set<Material> OPERATOR_ITEMS = EnumSet.of(
-            // Debug / operator tools
-            Material.KNOWLEDGE_BOOK, Material.DEBUG_STICK, Material.BARRIER,
-            Material.LIGHT, Material.STRUCTURE_VOID, Material.STRUCTURE_BLOCK, Material.JIGSAW,
-            // Command blocks
-            Material.COMMAND_BLOCK, Material.REPEATING_COMMAND_BLOCK, Material.CHAIN_COMMAND_BLOCK,
-            Material.COMMAND_BLOCK_MINECART,
-            // Spawners (creative / Silk Touch edge-case excluded intentionally)
-            Material.SPAWNER, Material.TRIAL_SPAWNER,
-            // Vault block (not pickable in survival)
-            Material.VAULT,
-            // World-generation-only blocks
-            Material.END_PORTAL_FRAME, Material.BEDROCK, Material.REINFORCED_DEEPSLATE
-    );
+    private static final Set<Material> NON_SURVIVAL = buildNonSurvival();
+
+    private static Set<Material> buildNonSurvival() {
+        EnumSet<Material> s = EnumSet.of(
+                // Debug / operator tools
+                Material.KNOWLEDGE_BOOK, Material.DEBUG_STICK, Material.BARRIER,
+                Material.LIGHT, Material.STRUCTURE_VOID, Material.STRUCTURE_BLOCK, Material.JIGSAW,
+                // Command blocks (all variants)
+                Material.COMMAND_BLOCK, Material.REPEATING_COMMAND_BLOCK,
+                Material.CHAIN_COMMAND_BLOCK, Material.COMMAND_BLOCK_MINECART,
+                // Spawners
+                Material.SPAWNER, Material.TRIAL_SPAWNER,
+                // Vault blocks (not pickable in survival)
+                Material.VAULT,
+                // World-generation-only / unobtainable blocks
+                Material.END_PORTAL_FRAME, Material.BEDROCK, Material.REINFORCED_DEEPSLATE,
+                Material.BUDDING_AMETHYST,    // Silk Touch has no effect
+                Material.CHORUS_PLANT,        // drops nothing when broken
+                Material.FROGSPAWN,           // hatches / breaks without dropping
+                // Eggs not obtainable from survival gameplay
+                Material.SNIFFER_EGG
+        );
+        return Collections.unmodifiableSet(s);
+    }
 
     private static final Set<Material> COMBAT_EXTRAS = EnumSet.of(
             Material.TRIDENT, Material.SHIELD, Material.MACE,
@@ -83,7 +93,7 @@ public enum MaterialCategory {
                 Material.VINE, Material.GLOW_LICHEN, Material.KELP, Material.DRIED_KELP_BLOCK,
                 Material.SEAGRASS, Material.SEA_PICKLE,
                 Material.CACTUS, Material.BAMBOO, Material.SUGAR_CANE,
-                Material.CHORUS_PLANT, Material.CHORUS_FLOWER,
+                Material.CHORUS_FLOWER,
                 Material.SHORT_GRASS, Material.TALL_GRASS, Material.FERN, Material.LARGE_FERN,
                 Material.DEAD_BUSH, Material.LILY_PAD
         );
@@ -94,11 +104,11 @@ public enum MaterialCategory {
                 Material.LILY_OF_THE_VALLEY, Material.WITHER_ROSE, Material.SUNFLOWER,
                 Material.LILAC, Material.ROSE_BUSH, Material.PEONY,
                 Material.DRIPSTONE_BLOCK, Material.POINTED_DRIPSTONE,
-                Material.AMETHYST_BLOCK, Material.BUDDING_AMETHYST, Material.AMETHYST_SHARD,
+                Material.AMETHYST_BLOCK, Material.AMETHYST_SHARD,
                 Material.MOSS_BLOCK, Material.MOSS_CARPET,
                 Material.AZALEA, Material.FLOWERING_AZALEA,
                 Material.SPORE_BLOSSOM, Material.BIG_DRIPLEAF, Material.SMALL_DRIPLEAF,
-                Material.HANGING_ROOTS, Material.FROGSPAWN,
+                Material.HANGING_ROOTS,
                 Material.SCULK, Material.SCULK_VEIN,
                 Material.NETHER_WART, Material.NETHER_WART_BLOCK, Material.WARPED_WART_BLOCK,
                 Material.SHROOMLIGHT, Material.CRIMSON_NYLIUM, Material.WARPED_NYLIUM,
@@ -207,8 +217,8 @@ public enum MaterialCategory {
     private static MaterialCategory classify(Material m) {
         String n = m.name();
 
-        // Excluded: spawn eggs + operator-only items
-        if (n.endsWith("_SPAWN_EGG") || OPERATOR_ITEMS.contains(m)) return null;
+        // Excluded: spawn eggs, test blocks, and non-survival items
+        if (n.endsWith("_SPAWN_EGG") || n.startsWith("TEST_") || NON_SURVIVAL.contains(m)) return null;
 
         // Combat & Tools
         if (n.endsWith("_SWORD") || n.endsWith("_PICKAXE") || n.endsWith("_AXE") ||
