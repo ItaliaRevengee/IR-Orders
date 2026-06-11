@@ -102,11 +102,16 @@ public class GuiListener implements Listener {
             promptSearch(player, session);
             return;
         }
-        // Clear search
-        if (slot == 7) {
-            session.setPickerSearch(null);
-            session.setPickerPage(0);
-            new CatalogGUI(plugin).open(player, session);
+        // Category tabs (slots 1-7)
+        if (slot >= 1 && slot <= 7) {
+            MaterialCategory[] cats = MaterialCategory.values();
+            int idx = slot - 1;
+            if (idx < cats.length) {
+                session.setSelectedCategory(cats[idx]);
+                session.setPickerSearch(null);
+                session.setPickerPage(0);
+                new CatalogGUI(plugin).open(player, session);
+            }
             return;
         }
         // Back button
@@ -118,6 +123,13 @@ public class GuiListener implements Listener {
         // Prev page
         if (slot == 45 && session.getPickerPage() > 0) {
             session.setPickerPage(session.getPickerPage() - 1);
+            new CatalogGUI(plugin).open(player, session);
+            return;
+        }
+        // Clear search (only visible when a search is active)
+        if (slot == 47) {
+            session.setPickerSearch(null);
+            session.setPickerPage(0);
             new CatalogGUI(plugin).open(player, session);
             return;
         }

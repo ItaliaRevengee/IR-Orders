@@ -12,6 +12,7 @@ public class SessionData {
     private int selectedQuantity = -1;
     private String pickerSearch = null;
     private int pickerPage = 0;
+    private MaterialCategory selectedCategory = MaterialCategory.BUILDING_BLOCKS;
     private int marketPage = 0;
     private int myOrdersPage = 0;
 
@@ -27,6 +28,9 @@ public class SessionData {
     public int getPickerPage() { return pickerPage; }
     public void setPickerPage(int p) { this.pickerPage = p; }
 
+    public MaterialCategory getSelectedCategory() { return selectedCategory; }
+    public void setSelectedCategory(MaterialCategory c) { this.selectedCategory = c; }
+
     public int getMarketPage() { return marketPage; }
     public void setMarketPage(int p) { this.marketPage = p; }
 
@@ -38,5 +42,6 @@ public class SessionData {
         selectedQuantity = -1;
         pickerSearch = null;
         pickerPage = 0;
+        selectedCategory = MaterialCategory.BUILDING_BLOCKS;
     }
 }
