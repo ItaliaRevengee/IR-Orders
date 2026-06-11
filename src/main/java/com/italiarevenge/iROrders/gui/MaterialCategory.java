@@ -26,9 +26,18 @@ public enum MaterialCategory {
     // ── Helper sets — MUST be declared before the static block that calls classify() ──
 
     private static final Set<Material> OPERATOR_ITEMS = EnumSet.of(
-            Material.KNOWLEDGE_BOOK, Material.DEBUG_STICK, Material.COMMAND_BLOCK_MINECART,
-            Material.BARRIER, Material.LIGHT, Material.STRUCTURE_VOID,
-            Material.STRUCTURE_BLOCK, Material.JIGSAW
+            // Debug / operator tools
+            Material.KNOWLEDGE_BOOK, Material.DEBUG_STICK, Material.BARRIER,
+            Material.LIGHT, Material.STRUCTURE_VOID, Material.STRUCTURE_BLOCK, Material.JIGSAW,
+            // Command blocks
+            Material.COMMAND_BLOCK, Material.REPEATING_COMMAND_BLOCK, Material.CHAIN_COMMAND_BLOCK,
+            Material.COMMAND_BLOCK_MINECART,
+            // Spawners (creative / Silk Touch edge-case excluded intentionally)
+            Material.SPAWNER, Material.TRIAL_SPAWNER,
+            // Vault block (not pickable in survival)
+            Material.VAULT,
+            // World-generation-only blocks
+            Material.END_PORTAL_FRAME, Material.BEDROCK, Material.REINFORCED_DEEPSLATE
     );
 
     private static final Set<Material> COMBAT_EXTRAS = EnumSet.of(
@@ -69,7 +78,7 @@ public enum MaterialCategory {
                 Material.NETHERRACK, Material.SOUL_SAND, Material.SOUL_SOIL,
                 Material.BASALT, Material.POLISHED_BASALT, Material.SMOOTH_BASALT,
                 Material.BLACKSTONE, Material.BONE_BLOCK,
-                Material.MAGMA_BLOCK, Material.OBSIDIAN, Material.CRYING_OBSIDIAN, Material.BEDROCK,
+                Material.MAGMA_BLOCK, Material.OBSIDIAN, Material.CRYING_OBSIDIAN,
                 Material.SPONGE, Material.WET_SPONGE,
                 Material.VINE, Material.GLOW_LICHEN, Material.KELP, Material.DRIED_KELP_BLOCK,
                 Material.SEAGRASS, Material.SEA_PICKLE,
@@ -147,6 +156,21 @@ public enum MaterialCategory {
         return Collections.unmodifiableSet(s);
     }
 
+    private static final Set<Material> ORES_EXTRAS = EnumSet.of(
+            // Gem / mineral drops
+            Material.DIAMOND, Material.EMERALD, Material.COAL,
+            Material.LAPIS_LAZULI, Material.QUARTZ, Material.AMETHYST_SHARD,
+            // Raw metal forms
+            Material.RAW_IRON, Material.RAW_COPPER, Material.RAW_GOLD,
+            Material.NETHERITE_SCRAP,
+            // Storage blocks
+            Material.IRON_BLOCK, Material.GOLD_BLOCK, Material.DIAMOND_BLOCK,
+            Material.EMERALD_BLOCK, Material.LAPIS_BLOCK, Material.COAL_BLOCK,
+            Material.COPPER_BLOCK, Material.NETHERITE_BLOCK,
+            Material.RAW_IRON_BLOCK, Material.RAW_COPPER_BLOCK, Material.RAW_GOLD_BLOCK,
+            Material.QUARTZ_BLOCK, Material.ANCIENT_DEBRIS
+    );
+
     // ── Category maps — built AFTER all helper sets are initialized ────────────
 
     private static final Map<Material, MaterialCategory> CATEGORY_MAP;
@@ -220,8 +244,8 @@ public enum MaterialCategory {
         if (m.isEdible() || DRINK_ITEMS.contains(m))
             return FOOD;
 
-        // Ores (checked before default so they don't fall into Building Blocks)
-        if (n.endsWith("_ORE") || m == Material.ANCIENT_DEBRIS)
+        // Ores, ingots, raw resources and storage blocks
+        if (n.endsWith("_ORE") || n.endsWith("_INGOT") || ORES_EXTRAS.contains(m))
             return ORES;
 
         // Functional blocks
