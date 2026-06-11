@@ -7,9 +7,6 @@ description: Advanced buy-order marketplace for Minecraft servers
 authors:
   - IR-Team
 
-dependencies:
-  server:
-    - name: Vault
-      required: false
-      load: BEFORE
-      joinClasspath: true
+# softdepend shares Vault's classloader with our plugin automatically
+softdepend:
+  - Vault

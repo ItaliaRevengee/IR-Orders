@@ -45,9 +45,12 @@ tasks {
     }
     processResources {
         val props = mapOf("version" to version)
-        filesMatching("paper-plugin.yml") {
+        // Use classic plugin.yml (softdepend gives Vault classloader access).
+        // Exclude paper-plugin.yml so Paper's new isolated classloader is NOT used.
+        filesMatching("plugin.yml") {
             expand(props)
         }
+        exclude("paper-plugin.yml")
     }
     withType<JavaCompile> {
         options.encoding = "UTF-8"

@@ -60,9 +60,17 @@ public final class IROrders extends JavaPlugin {
         }
 
         // Economy (Vault)
-        economyManager = new EconomyManager(this);
-        if (!economyManager.setup()) {
-            getLogger().severe("Vault economy not found — disabling IR-Orders.");
+        try {
+            economyManager = new EconomyManager(this);
+            if (!economyManager.setup()) {
+                getLogger().severe("No economy provider registered with Vault. "
+                        + "Install an economy plugin (EssentialsX, CMI, etc.) — disabling IR-Orders.");
+                getServer().getPluginManager().disablePlugin(this);
+                return;
+            }
+        } catch (NoClassDefFoundError e) {
+            getLogger().severe("Vault.jar not found in your plugins folder! "
+                    + "Download it from spigotmc.org/resources/vault.34315/ — disabling IR-Orders.");
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
