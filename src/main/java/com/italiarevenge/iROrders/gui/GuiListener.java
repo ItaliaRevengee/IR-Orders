@@ -64,12 +64,13 @@ public class GuiListener implements Listener {
         SessionData session = getOrCreateSession(player.getUniqueId());
 
         switch (gui.getType()) {
-            case MAIN_MENU  -> handleMainMenu(player, e.getSlot(), session);
-            case CATALOG    -> handleCatalog(player, e.getSlot(), clicked, session);
-            case QUANTITY   -> handleQuantity(player, e.getSlot(), clicked, session);
-            case MY_ORDERS  -> handleMyOrders(player, e.getSlot(), clicked, e.getClick(), session);
-            case MARKET     -> handleMarket(player, e.getSlot(), clicked, e.getClick(), session);
-            case BACKPACK   -> handleBackpack(player, e.getSlot(), clicked);
+            case MAIN_MENU       -> handleMainMenu(player, e.getSlot(), session);
+            case CATEGORY_PICKER -> handleCategoryPicker(player, e.getSlot(), session);
+            case CATALOG         -> handleCatalog(player, e.getSlot(), clicked, session);
+            case QUANTITY        -> handleQuantity(player, e.getSlot(), clicked, session);
+            case MY_ORDERS       -> handleMyOrders(player, e.getSlot(), clicked, e.getClick(), session);
+            case MARKET          -> handleMarket(player, e.getSlot(), clicked, e.getClick(), session);
+            case BACKPACK        -> handleBackpack(player, e.getSlot(), clicked);
         }
     }
 
@@ -80,7 +81,7 @@ public class GuiListener implements Listener {
             case 10 -> {                                          // Create Order
                 session.reset();
                 player.closeInventory();
-                new CatalogGUI(plugin).open(player, session);
+                new CategoryPickerGUI().open(player, session);
             }
             case 13 -> {                                          // My Orders
                 player.closeInventory();
@@ -89,6 +90,29 @@ public class GuiListener implements Listener {
             case 16 -> {                                          // Global Market
                 player.closeInventory();
                 new MarketGUI(plugin).open(player, session);
+            }
+        }
+    }
+
+    // ── Category Picker ───────────────────────────────────────────────────────
+
+    private void handleCategoryPicker(Player player, int slot, SessionData session) {
+        if (slot == 49) {
+            player.closeInventory();
+            new MainMenuGUI(plugin).open(player);
+            return;
+        }
+        int[] catSlots = CategoryPickerGUI.CATEGORY_SLOTS;
+        for (int i = 0; i < catSlots.length; i++) {
+            if (catSlots[i] == slot) {
+                MaterialCategory[] cats = MaterialCategory.values();
+                if (i < cats.length) {
+                    session.setSelectedCategory(cats[i]);
+                    session.setPickerPage(0);
+                    session.setPickerSearch(null);
+                    new CatalogGUI(plugin).open(player, session);
+                }
+                return;
             }
         }
     }
@@ -102,34 +126,22 @@ public class GuiListener implements Listener {
             promptSearch(player, session);
             return;
         }
-        // Category tabs (slots 1-7)
-        if (slot >= 1 && slot <= 7) {
-            MaterialCategory[] cats = MaterialCategory.values();
-            int idx = slot - 1;
-            if (idx < cats.length) {
-                session.setSelectedCategory(cats[idx]);
-                session.setPickerSearch(null);
-                session.setPickerPage(0);
-                new CatalogGUI(plugin).open(player, session);
-            }
+        // Clear search
+        if (slot == 7) {
+            session.setPickerSearch(null);
+            session.setPickerPage(0);
+            new CatalogGUI(plugin).open(player, session);
             return;
         }
-        // Back button
+        // Back to category picker
         if (slot == 8) {
             player.closeInventory();
-            new MainMenuGUI(plugin).open(player);
+            new CategoryPickerGUI().open(player, session);
             return;
         }
         // Prev page
         if (slot == 45 && session.getPickerPage() > 0) {
             session.setPickerPage(session.getPickerPage() - 1);
-            new CatalogGUI(plugin).open(player, session);
-            return;
-        }
-        // Clear search (only visible when a search is active)
-        if (slot == 47) {
-            session.setPickerSearch(null);
-            session.setPickerPage(0);
             new CatalogGUI(plugin).open(player, session);
             return;
         }

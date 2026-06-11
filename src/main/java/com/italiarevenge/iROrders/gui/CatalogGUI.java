@@ -13,33 +13,24 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
 /**
- * Creative-style item picker with category tabs.
+ * Shows items for the selected category (or search results).
  *
  * Layout (54 slots):
- *   Row 0 (0-8)   : [Search] [Cat1..Cat7] [Back]
+ *   Row 0 (0-8)    : [Search(0)] [filler×6] [ClearSearch(7)] [Back(8)]
  *   Rows 1-4 (9-44): item grid, 36 items per page
- *   Row 5 (45-53) : [Prev] [filler] [ClearSearch] [filler] [PageInfo] [filler x3] [Next]
+ *   Row 5 (45-53)  : [Prev(45)] [filler×3] [PageInfo(49)] [filler×3] [Next(53)]
  */
 public class CatalogGUI {
 
     static final int ITEMS_PER_PAGE = 36;
     static final int ITEM_START = 9;
     static final int ITEM_END   = 44;
-
-    // All categorised materials (spawn eggs excluded via MaterialCategory)
-    private static final List<Material> ALL_MATERIALS = Arrays.stream(Material.values())
-            .filter(m -> !m.isAir() && m.isItem() && !m.isLegacy()
-                    && MaterialCategory.of(m) != null)
-            .sorted(Comparator.comparing(Material::name))
-            .collect(Collectors.toUnmodifiableList());
 
     private final IROrders plugin;
 
@@ -52,11 +43,10 @@ public class CatalogGUI {
         boolean hasSearch = search != null && !search.isBlank();
         MaterialCategory selectedCat = session.getSelectedCategory();
 
-        // Items to display
         List<Material> items;
         if (hasSearch) {
             String lc = search.toLowerCase(Locale.ROOT);
-            items = ALL_MATERIALS.stream()
+            items = selectedCat.getItems().stream()
                     .filter(m -> m.name().toLowerCase(Locale.ROOT).contains(lc)
                             || formatName(m).toLowerCase(Locale.ROOT).contains(lc))
                     .collect(Collectors.toList());
@@ -69,7 +59,7 @@ public class CatalogGUI {
         session.setPickerPage(page);
 
         Component title = hasSearch
-                ? Component.text("Search: ", NamedTextColor.DARK_PURPLE)
+                ? Component.text(selectedCat.displayName + " › ", NamedTextColor.DARK_PURPLE)
                         .decoration(TextDecoration.BOLD, true)
                         .append(Component.text("\"" + search + "\"", NamedTextColor.GOLD)
                                 .decoration(TextDecoration.BOLD, false))
@@ -85,21 +75,43 @@ public class CatalogGUI {
         // ── Row 0 ─────────────────────────────────────────────────────────────
         for (int i = 0; i < 9; i++) inv.setItem(i, filler);
 
-        // Slot 0: search
-        inv.setItem(0, buildSearchButton(search, hasSearch, items.size()));
-
-        // Slots 1-7: category tabs
-        MaterialCategory[] cats = MaterialCategory.values();
-        for (int i = 0; i < cats.length; i++) {
-            boolean isSelected = !hasSearch && cats[i] == selectedCat;
-            inv.setItem(1 + i, buildCategoryTab(cats[i], isSelected));
+        // Slot 0: search within category
+        if (hasSearch) {
+            inv.setItem(0, ItemUtil.build(Material.COMPASS,
+                    Component.text("Search: " + search, NamedTextColor.YELLOW)
+                            .decoration(TextDecoration.ITALIC, false),
+                    List.of(
+                            Component.text("Click to change search", NamedTextColor.GRAY)
+                                    .decoration(TextDecoration.ITALIC, false),
+                            Component.text("Results: " + items.size(), NamedTextColor.AQUA)
+                                    .decoration(TextDecoration.ITALIC, false)
+                    )));
+        } else {
+            inv.setItem(0, ItemUtil.build(Material.COMPASS,
+                    Component.text("Search...", NamedTextColor.YELLOW)
+                            .decoration(TextDecoration.ITALIC, false),
+                    List.of(
+                            Component.text("Click to search in this category", NamedTextColor.GRAY)
+                                    .decoration(TextDecoration.ITALIC, false),
+                            Component.text("Total: " + items.size() + " items", NamedTextColor.AQUA)
+                                    .decoration(TextDecoration.ITALIC, false)
+                    )));
         }
 
-        // Slot 8: back
+        // Slot 7: clear search (only when active)
+        if (hasSearch) {
+            inv.setItem(7, ItemUtil.build(Material.BARRIER,
+                    Component.text("Clear Search", NamedTextColor.RED)
+                            .decoration(TextDecoration.ITALIC, false),
+                    List.of(Component.text("Show all items in category", NamedTextColor.GRAY)
+                            .decoration(TextDecoration.ITALIC, false))));
+        }
+
+        // Slot 8: back to category picker
         inv.setItem(8, ItemUtil.build(Material.ARROW,
-                Component.text("<- Back to Menu", NamedTextColor.RED)
+                Component.text("<- Categories", NamedTextColor.RED)
                         .decoration(TextDecoration.ITALIC, false),
-                List.of(Component.text("Return to main menu", NamedTextColor.GRAY)
+                List.of(Component.text("Return to category selection", NamedTextColor.GRAY)
                         .decoration(TextDecoration.ITALIC, false))));
 
         // ── Row 5 ─────────────────────────────────────────────────────────────
@@ -110,13 +122,6 @@ public class CatalogGUI {
                     Component.text("<- Previous", NamedTextColor.YELLOW)
                             .decoration(TextDecoration.ITALIC, false),
                     List.of(Component.text("Page " + page + " of " + totalPages, NamedTextColor.GRAY)
-                            .decoration(TextDecoration.ITALIC, false))));
-        }
-        if (hasSearch) {
-            inv.setItem(47, ItemUtil.build(Material.BARRIER,
-                    Component.text("Clear Search", NamedTextColor.RED)
-                            .decoration(TextDecoration.ITALIC, false),
-                    List.of(Component.text("Show category items", NamedTextColor.GRAY)
                             .decoration(TextDecoration.ITALIC, false))));
         }
         inv.setItem(49, ItemUtil.build(Material.PAPER,
@@ -142,57 +147,6 @@ public class CatalogGUI {
         }
 
         player.openInventory(inv);
-    }
-
-    // ── Item builders ─────────────────────────────────────────────────────────
-
-    private ItemStack buildCategoryTab(MaterialCategory cat, boolean selected) {
-        ItemStack item = new ItemStack(cat.icon);
-        ItemMeta meta = item.getItemMeta();
-        if (meta == null) return item;
-
-        meta.displayName(Component.text(cat.displayName,
-                        selected ? NamedTextColor.YELLOW : NamedTextColor.GRAY)
-                .decoration(TextDecoration.ITALIC, false)
-                .decoration(TextDecoration.BOLD, selected));
-
-        List<Component> lore = new ArrayList<>();
-        lore.add(Component.text(cat.getItems().size() + " items", NamedTextColor.AQUA)
-                .decoration(TextDecoration.ITALIC, false));
-        if (selected) {
-            lore.add(Component.empty());
-            lore.add(Component.text("Currently viewing", NamedTextColor.GREEN)
-                    .decoration(TextDecoration.ITALIC, false));
-        } else {
-            lore.add(Component.empty());
-            lore.add(Component.text("Click to browse", NamedTextColor.DARK_GRAY)
-                    .decoration(TextDecoration.ITALIC, false));
-        }
-        meta.lore(lore);
-
-        if (selected) meta.setEnchantmentGlintOverride(true);
-
-        item.setItemMeta(meta);
-        return item;
-    }
-
-    private ItemStack buildSearchButton(String search, boolean hasSearch, int resultCount) {
-        if (hasSearch) {
-            return ItemUtil.build(Material.COMPASS,
-                    Component.text("Search: " + search, NamedTextColor.YELLOW)
-                            .decoration(TextDecoration.ITALIC, false),
-                    List.of(
-                            Component.text("Click to change search", NamedTextColor.GRAY)
-                                    .decoration(TextDecoration.ITALIC, false),
-                            Component.text("Results: " + resultCount, NamedTextColor.AQUA)
-                                    .decoration(TextDecoration.ITALIC, false)
-                    ));
-        }
-        return ItemUtil.build(Material.COMPASS,
-                Component.text("Search...", NamedTextColor.YELLOW)
-                        .decoration(TextDecoration.ITALIC, false),
-                List.of(Component.text("Click to search by name", NamedTextColor.GRAY)
-                        .decoration(TextDecoration.ITALIC, false)));
     }
 
     private ItemStack buildMaterialStack(Material mat) {

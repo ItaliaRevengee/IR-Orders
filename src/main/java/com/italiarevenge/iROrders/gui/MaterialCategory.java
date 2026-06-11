@@ -9,6 +9,7 @@ public enum MaterialCategory {
     BUILDING_BLOCKS("Building Blocks", Material.BRICKS),
     COLORED_BLOCKS("Colored Blocks",   Material.WHITE_WOOL),
     NATURAL_BLOCKS("Natural Blocks",   Material.GRASS_BLOCK),
+    ORES("Ores",                       Material.DIAMOND_ORE),
     FUNCTIONAL_BLOCKS("Functional",    Material.CRAFTING_TABLE),
     REDSTONE("Redstone",               Material.REDSTONE),
     COMBAT("Combat & Tools",           Material.IRON_SWORD),
@@ -218,6 +219,10 @@ public enum MaterialCategory {
         // Food & Misc (edible + drinks)
         if (m.isEdible() || DRINK_ITEMS.contains(m))
             return FOOD;
+
+        // Ores (checked before default so they don't fall into Building Blocks)
+        if (n.endsWith("_ORE") || m == Material.ANCIENT_DEBRIS)
+            return ORES;
 
         // Functional blocks
         if (n.endsWith("_SIGN") || n.endsWith("_HANGING_SIGN") ||
