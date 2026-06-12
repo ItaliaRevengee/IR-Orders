@@ -134,9 +134,10 @@ public class BackpackManager {
 
     private void ensureLoaded(UUID playerUUID) {
         if (!loadedData.containsKey(playerUUID)) {
-            // Synchronous fallback — called rarely (first access only)
-            db.loadBackpackItemsAsync(playerUUID).thenAccept(items ->
-                    loadedData.put(playerUUID, new LinkedHashMap<>(items))).join();
+            // Read directly on the calling thread — avoids blocking waiting for the
+            // DB executor queue to drain, which would stall the main thread.
+            loadedData.put(playerUUID,
+                    new LinkedHashMap<>(db.loadBackpackItemsDirect(playerUUID)));
         }
     }
 }

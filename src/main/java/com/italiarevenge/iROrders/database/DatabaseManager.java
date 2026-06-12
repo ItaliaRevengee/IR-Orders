@@ -199,13 +199,14 @@ public class DatabaseManager {
     // ── Synchronous reads (startup) ───────────────────────────────────────────
 
     public List<Order> loadActiveOrdersSync() {
+        // Bulk-load all enchants first to avoid N+1 queries
+        Map<UUID, Map<String, Integer>> allEnchants = loadAllOrderEnchantsSync();
         List<Order> orders = new ArrayList<>();
         try (PreparedStatement ps = connection.prepareStatement(
                 "SELECT * FROM buy_orders WHERE status='ACTIVE'")) {
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 UUID id = UUID.fromString(rs.getString("id"));
-                Map<String, Integer> enchants = loadOrderEnchantsSync(id);
                 orders.add(new Order(
                         id,
                         UUID.fromString(rs.getString("buyer_uuid")),
@@ -213,7 +214,7 @@ public class DatabaseManager {
                         Material.valueOf(rs.getString("material")),
                         rs.getInt("quantity"),
                         rs.getDouble("price"),
-                        enchants,
+                        allEnchants.getOrDefault(id, Collections.emptyMap()),
                         rs.getInt("strict_enchants") == 1,
                         rs.getLong("created_at")));
             }
@@ -223,17 +224,20 @@ public class DatabaseManager {
         return orders;
     }
 
-    private Map<String, Integer> loadOrderEnchantsSync(UUID orderId) {
-        Map<String, Integer> map = new HashMap<>();
-        try (PreparedStatement ps = connection.prepareStatement(
-                "SELECT enchant_key,enchant_level FROM order_enchants WHERE order_id=?")) {
-            ps.setString(1, orderId.toString());
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) map.put(rs.getString(1), rs.getInt(2));
+    private Map<UUID, Map<String, Integer>> loadAllOrderEnchantsSync() {
+        Map<UUID, Map<String, Integer>> result = new HashMap<>();
+        try (Statement s = connection.createStatement()) {
+            ResultSet rs = s.executeQuery(
+                    "SELECT order_id,enchant_key,enchant_level FROM order_enchants");
+            while (rs.next()) {
+                UUID oid = UUID.fromString(rs.getString(1));
+                result.computeIfAbsent(oid, k -> new HashMap<>())
+                      .put(rs.getString(2), rs.getInt(3));
+            }
         } catch (SQLException e) {
-            plugin.getLogger().log(Level.SEVERE, "loadOrderEnchants failed", e);
+            plugin.getLogger().log(Level.SEVERE, "loadAllOrderEnchants failed", e);
         }
-        return map;
+        return result;
     }
 
     public Map<UUID, Integer> loadBackpackSlotCountsSync() {
@@ -252,21 +256,28 @@ public class DatabaseManager {
     // ── Asynchronous reads ────────────────────────────────────────────────────
 
     public CompletableFuture<Map<Integer, ItemStack>> loadBackpackItemsAsync(UUID playerUUID) {
-        return CompletableFuture.supplyAsync(() -> {
-            Map<Integer, ItemStack> items = new LinkedHashMap<>();
-            try (PreparedStatement ps = connection.prepareStatement(
-                    "SELECT slot,item_data FROM backpack_items WHERE player_uuid=? ORDER BY slot")) {
-                ps.setString(1, playerUUID.toString());
-                ResultSet rs = ps.executeQuery();
-                while (rs.next()) {
-                    byte[] bytes = Base64.getDecoder().decode(rs.getString(2));
-                    items.put(rs.getInt(1), ItemStack.deserializeBytes(bytes));
-                }
-            } catch (SQLException e) {
-                plugin.getLogger().log(Level.SEVERE, "loadBackpackItems failed", e);
+        return CompletableFuture.supplyAsync(() -> loadBackpackItemsDirect(playerUUID), executor);
+    }
+
+    /**
+     * Reads backpack items directly on the calling thread without going through the executor.
+     * Use this on the main thread when data is needed immediately — avoids blocking the tick
+     * waiting for the executor queue to drain.
+     */
+    public Map<Integer, ItemStack> loadBackpackItemsDirect(UUID playerUUID) {
+        Map<Integer, ItemStack> items = new LinkedHashMap<>();
+        try (PreparedStatement ps = connection.prepareStatement(
+                "SELECT slot,item_data FROM backpack_items WHERE player_uuid=? ORDER BY slot")) {
+            ps.setString(1, playerUUID.toString());
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                byte[] bytes = Base64.getDecoder().decode(rs.getString(2));
+                items.put(rs.getInt(1), ItemStack.deserializeBytes(bytes));
             }
-            return items;
-        }, executor);
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "loadBackpackItemsDirect failed", e);
+        }
+        return items;
     }
 
     // ── Asynchronous writes (non-critical path) ───────────────────────────────
@@ -277,6 +288,14 @@ public class DatabaseManager {
 
     public CompletableFuture<Void> updateOrderStatusAsync(UUID orderId, OrderStatus status) {
         return CompletableFuture.runAsync(() -> updateOrderStatusSync(orderId, status), executor);
+    }
+
+    public CompletableFuture<Void> logTransactionAsync(UUID orderId, UUID sellerUUID,
+                                                        UUID buyerUUID, String itemId,
+                                                        int quantity, double price) {
+        return CompletableFuture.runAsync(
+                () -> logTransactionSync(orderId, sellerUUID, buyerUUID, itemId, quantity, price),
+                executor);
     }
 
     // ── Shutdown ──────────────────────────────────────────────────────────────

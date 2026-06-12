@@ -53,6 +53,9 @@ public class OrderManager {
     /** Per-order mutex to prevent concurrent fulfillment of the same order. */
     private final ConcurrentHashMap<UUID, ReentrantLock> orderLocks = new ConcurrentHashMap<>();
 
+    /** Reverse index: buyer UUID → set of their active order IDs (O(1) per-player lookups). */
+    private final ConcurrentHashMap<UUID, Set<UUID>> playerOrderIndex = new ConcurrentHashMap<>();
+
     public OrderManager(IROrders plugin, DatabaseManager db,
                         EconomyManager economy, BackpackManager backpackManager) {
         this.plugin = plugin;
@@ -69,7 +72,10 @@ public class OrderManager {
 
     public void loadActiveOrders() {
         List<Order> orders = db.loadActiveOrdersSync();
-        orders.forEach(o -> activeOrders.put(o.getId(), o));
+        for (Order o : orders) {
+            activeOrders.put(o.getId(), o);
+            indexAdd(o.getBuyerUUID(), o.getId());
+        }
         plugin.getLogger().info("Loaded " + orders.size() + " active orders into cache.");
     }
 
@@ -81,9 +87,8 @@ public class OrderManager {
      */
     public void createOrder(Player buyer, CatalogItem catalogItem, int quantity, double price) {
         int max = plugin.getConfig().getInt("market.max-orders-per-player", 20);
-        long playerOrders = activeOrders.values().stream()
-                .filter(o -> o.getBuyerUUID().equals(buyer.getUniqueId()))
-                .count();
+        int playerOrders = playerOrderIndex
+                .getOrDefault(buyer.getUniqueId(), Collections.emptySet()).size();
         if (playerOrders >= max) {
             buyer.sendMessage(Component.text("You have reached the maximum of " + max
                     + " active orders.", NamedTextColor.RED));
@@ -124,6 +129,7 @@ public class OrderManager {
                 System.currentTimeMillis());
 
         activeOrders.put(order.getId(), order);
+        indexAdd(buyer.getUniqueId(), order.getId());
         db.saveOrderAsync(order);
 
         buyer.sendMessage(Component.text("✔ Order created! ", NamedTextColor.GREEN)
@@ -149,6 +155,7 @@ public class OrderManager {
         order.setStatus(OrderStatus.CANCELLED);
         activeOrders.remove(orderId);
         orderLocks.remove(orderId);
+        indexRemove(order.getBuyerUUID(), orderId);
 
         economy.deposit(buyer, order.getPrice());
         db.updateOrderStatusAsync(orderId, OrderStatus.CANCELLED);
@@ -260,18 +267,17 @@ public class OrderManager {
             // ── Commit in-memory state ────────────────────────────────────────
             order.setStatus(OrderStatus.FILLED);
             activeOrders.remove(orderId);
+            indexRemove(order.getBuyerUUID(), orderId);
 
-            // ── Persist async (non-blocking from here) ────────────────────────
+            // ── Persist async through the DB executor (properly serialised) ───
             final UUID sellerUUID = seller.getUniqueId();
             final UUID buyerUUID  = order.getBuyerUUID();
             final String itemId   = order.getItemId();
             final int qty         = order.getQuantity();
             final double price    = order.getPrice();
 
-            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-                db.updateOrderStatusSync(orderId, OrderStatus.FILLED);
-                db.logTransactionSync(orderId, sellerUUID, buyerUUID, itemId, qty, price);
-            });
+            db.updateOrderStatusAsync(orderId, OrderStatus.FILLED);
+            db.logTransactionAsync(orderId, sellerUUID, buyerUUID, itemId, qty, price);
 
             // ── Notify both players ───────────────────────────────────────────
             seller.sendMessage(Component.text("✔ Sold! ", NamedTextColor.GREEN)
@@ -300,8 +306,10 @@ public class OrderManager {
     }
 
     public List<Order> getPlayerOrders(UUID playerUUID) {
-        return activeOrders.values().stream()
-                .filter(o -> o.getBuyerUUID().equals(playerUUID))
+        Set<UUID> ids = playerOrderIndex.getOrDefault(playerUUID, Collections.emptySet());
+        return ids.stream()
+                .map(activeOrders::get)
+                .filter(Objects::nonNull)
                 .sorted(Comparator.comparingLong(Order::getCreatedAt).reversed())
                 .collect(Collectors.toList());
     }
@@ -336,6 +344,20 @@ public class OrderManager {
         Map<Integer, ItemStack> leftover = player.getInventory().addItem(item);
         leftover.values().forEach(drop ->
                 player.getWorld().dropItemNaturally(player.getLocation(), drop));
+    }
+
+    // ── Player-order index helpers ────────────────────────────────────────────
+
+    private void indexAdd(UUID playerUUID, UUID orderId) {
+        playerOrderIndex.computeIfAbsent(playerUUID,
+                k -> ConcurrentHashMap.newKeySet()).add(orderId);
+    }
+
+    private void indexRemove(UUID playerUUID, UUID orderId) {
+        Set<UUID> set = playerOrderIndex.get(playerUUID);
+        if (set == null) return;
+        set.remove(orderId);
+        if (set.isEmpty()) playerOrderIndex.remove(playerUUID, set);
     }
 
     // ── Shutdown ──────────────────────────────────────────────────────────────
